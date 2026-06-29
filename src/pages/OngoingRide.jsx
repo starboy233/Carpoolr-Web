@@ -13,10 +13,6 @@ export default function OngoingRide({ session }) {
   const [arrived, setArrived] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // Call Signaling State
-  const [showCall, setShowCall] = useState(false);
-  const [callParams, setCallParams] = useState({ calleeName: '', calleePhone: '', callerName: '', isIncoming: false });
-
   const currentUser = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'Web User';
 
   const fetchRide = async () => {
@@ -40,27 +36,6 @@ export default function OngoingRide({ session }) {
     const poll = setInterval(fetchRide, 3000);
     return () => { supabase.removeChannel(ch); clearInterval(poll); };
   }, [rideId]);
-
-  // Subscribe to call signaling events
-  useEffect(() => {
-    CallManager.subscribe(rideId);
-    const unsub = CallManager.addListener((event, payload) => {
-      if (event === 'call_request') {
-        setCallParams({
-          calleeName: currentUser,
-          calleePhone: payload.callerPhone || '',
-          callerName: payload.callerName || 'Companion',
-          callerPhone: '',
-          isIncoming: true,
-        });
-        setShowCall(true);
-      }
-    });
-    return () => {
-      unsub();
-      CallManager.cleanup();
-    };
-  }, [rideId, currentUser]);
 
   // Auto-navigate: if passenger, auto-navigate to payment screen immediately when arrived (completed)
   // If passenger payment is already confirmed, go to rating
@@ -164,15 +139,11 @@ export default function OngoingRide({ session }) {
                         className="btn btn-secondary"
                         style={{ padding: '6px 10px', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         onClick={() => {
-                          const myPhone = ride.driver_phone || session?.user?.user_metadata?.phone || '';
-                          setCallParams({
-                            calleeName: p.name,
-                            calleePhone: p.phone || '+233000000000',
-                            callerName: currentUser,
-                            callerPhone: myPhone,
-                            isIncoming: false,
-                          });
-                          setShowCall(true);
+                          if (p.phone) {
+                            window.location.href = `tel:${p.phone}`;
+                          } else {
+                            alert('Phone number not available');
+                          }
                         }}
                       >
                         📞 Call
@@ -188,16 +159,11 @@ export default function OngoingRide({ session }) {
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }}
                 onClick={() => {
-                  const me = (ride.passengers || []).find(p => (p.name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase());
-                  const myPhone = me?.phone || session?.user?.user_metadata?.phone || '';
-                  setCallParams({
-                    calleeName: 'Driver',
-                    calleePhone: ride.driver_phone || '+233000000000',
-                    callerName: currentUser,
-                    callerPhone: myPhone,
-                    isIncoming: false,
-                  });
-                  setShowCall(true);
+                  if (ride.driver_phone) {
+                    window.location.href = `tel:${ride.driver_phone}`;
+                  } else {
+                    alert('Driver phone number not available');
+                  }
                 }}
               >
                 📞 Call Driver
@@ -282,15 +248,11 @@ export default function OngoingRide({ session }) {
                         className="btn btn-secondary"
                         style={{ padding: '6px 10px', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         onClick={() => {
-                          const myPhone = ride.driver_phone || session?.user?.user_metadata?.phone || '';
-                          setCallParams({
-                            calleeName: p.name,
-                            calleePhone: p.phone || '+233000000000',
-                            callerName: currentUser,
-                            callerPhone: myPhone,
-                            isIncoming: false,
-                          });
-                          setShowCall(true);
+                          if (p.phone) {
+                            window.location.href = `tel:${p.phone}`;
+                          } else {
+                            alert('Phone number not available');
+                          }
                         }}
                       >
                         📞 Call
@@ -333,20 +295,6 @@ export default function OngoingRide({ session }) {
             📋 View Ride History
           </button>
         </div>
-      )}
-
-      {/* Calling Overlay Component */}
-      {showCall && (
-        <CallOverlay
-          rideId={rideId}
-          currentUser={currentUser}
-          calleeName={callParams.calleeName}
-          calleePhone={callParams.calleePhone}
-          callerName={callParams.callerName}
-          callerPhone={callParams.callerPhone}
-          isIncoming={callParams.isIncoming}
-          onClose={() => setShowCall(false)}
-        />
       )}
     </div>
   );
