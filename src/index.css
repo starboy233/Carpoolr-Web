@@ -402,6 +402,7 @@ a {
   box-shadow: var(--shadow-lg);
   padding: 16px;
   animation: fadeIn 0.2s ease-out;
+  z-index: 10000;
 }
 
 @media (max-width: 900px) {

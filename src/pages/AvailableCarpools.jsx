@@ -222,8 +222,8 @@ export default function AvailableCarpools({ session }) {
       </header>
 
       <div className="find-carpools-layout">
-        {/* Left Column: Search Controls & Ride list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Search Controls */}
+        <div className="search-column">
           {/* Separated Search Section */}
           <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -262,8 +262,10 @@ export default function AvailableCarpools({ session }) {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Ride Listing */}
+        {/* Ride Listing */}
+        <div className="list-column">
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
               <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
@@ -365,8 +367,8 @@ export default function AvailableCarpools({ session }) {
           )}
         </div>
 
-        {/* Right Column: Sticky Map */}
-        <div className="sticky-map-column">
+        {/* Sticky Map */}
+        <div className="map-column sticky-map-column">
           <div className="glass-card" style={{ padding: '20px', position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '450px' }}>
             <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: '700', color: 'var(--text-primary)' }}>Route Preview Map</h3>
             <div style={{ flex: 1, position: 'relative' }}>
@@ -444,8 +446,20 @@ export default function AvailableCarpools({ session }) {
         .find-carpools-layout {
           display: grid;
           grid-template-columns: 1.2fr 1fr;
+          grid-template-areas: 
+            "search map"
+            "list   map";
           gap: 28px;
           align-items: start;
+        }
+        .search-column {
+          grid-area: search;
+        }
+        .list-column {
+          grid-area: list;
+        }
+        .map-column {
+          grid-area: map;
         }
         .sticky-map-column {
           position: sticky;
@@ -457,6 +471,10 @@ export default function AvailableCarpools({ session }) {
         @media (max-width: 900px) {
           .find-carpools-layout {
             grid-template-columns: 1fr;
+            grid-template-areas: 
+              "search"
+              "map"
+              "list";
           }
           .sticky-map-column {
             position: static;
