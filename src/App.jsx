@@ -83,17 +83,133 @@ const Sidebar = ({ session, onSignOut }) => {
   );
 };
 
+const MobileHeader = ({ session, onSignOut }) => {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const email = session?.user?.email || 'User';
+  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || email.split('@')[0] || 'User';
+  const initial = name.charAt(0).toUpperCase();
+
+  return (
+    <header className="mobile-header">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '1.6rem' }}>🚗</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
+          RideTogether
+        </span>
+      </div>
+      
+      <div style={{ position: 'relative' }}>
+        <button 
+          onClick={() => setShowDropdown(!showDropdown)}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '20px',
+            background: 'var(--primary)',
+            border: 'none',
+            color: '#FFFFFF',
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontSize: '1.1rem',
+            fontFamily: 'var(--font-display)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          {initial}
+        </button>
+
+        {showDropdown && (
+          <>
+            <div className="profile-dropdown-overlay" onClick={() => setShowDropdown(false)} />
+            <div className="profile-dropdown">
+              <div style={{ paddingBottom: '12px', borderBottom: '1px solid var(--border-color)', marginBottom: '12px', textAlign: 'left' }}>
+                <p style={{ fontWeight: 700, color: 'var(--text-primary)', margin: 0, fontSize: '0.95rem' }}>{name}</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0', wordBreak: 'break-all' }}>{email}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDropdown(false);
+                  onSignOut();
+                }}
+                className="btn btn-secondary"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', justifyContent: 'center' }}
+              >
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </header>
+  );
+};
+
+const MobileNav = () => {
+  const location = useLocation();
+  const navItems = [
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/available', label: 'Find Ride', icon: Car },
+    { path: '/offer', label: 'Offer Ride', icon: PlusCircle },
+    { path: '/history', label: 'History', icon: History },
+  ];
+
+  return (
+    <nav className="mobile-nav">
+      {navItems.map(item => {
+        const Icon = item.icon;
+        const isActive = location.pathname === item.path;
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Icon size={22} style={{ color: isActive ? 'var(--primary)' : 'inherit' }} />
+            <span style={{ fontSize: '0.7rem' }}>{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+};
+
 const ProtectedLayout = ({ children, session, handleSignOut }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 900);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
   return (
     <div className="app-container">
-      <Sidebar session={session} onSignOut={handleSignOut} />
-      <main className="main-content">
-        {children}
-      </main>
+      {isMobile ? (
+        <>
+          <MobileHeader session={session} onSignOut={handleSignOut} />
+          <main className="main-content">
+            {children}
+          </main>
+          <MobileNav />
+        </>
+      ) : (
+        <>
+          <Sidebar session={session} onSignOut={handleSignOut} />
+          <main className="main-content">
+            {children}
+          </main>
+        </>
+      )}
     </div>
   );
 };

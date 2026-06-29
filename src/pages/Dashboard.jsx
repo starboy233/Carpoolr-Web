@@ -124,7 +124,7 @@ export default function Dashboard({ session }) {
         })}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '28px' }}>
+      <div className="dashboard-layout">
         {/* Recent Rides */}
         <div className="glass-card" style={{ padding: '28px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

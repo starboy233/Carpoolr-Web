@@ -48,8 +48,9 @@ export default function OngoingRide({ session }) {
       if (event === 'call_request') {
         setCallParams({
           calleeName: currentUser,
-          calleePhone: '',
+          calleePhone: payload.callerPhone || '',
           callerName: payload.callerName || 'Companion',
+          callerPhone: '',
           isIncoming: true,
         });
         setShowCall(true);
@@ -136,19 +137,64 @@ export default function OngoingRide({ session }) {
         </div>
         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {isDriver ? (
-            <button className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }} onClick={handleEndTrip} disabled={updatingId === 'end'}>
-              🏁 End Trip
-            </button>
+            <>
+              <button className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }} onClick={handleEndTrip} disabled={updatingId === 'end'}>
+                🏁 End Trip
+              </button>
+
+              <div style={{ marginTop: '24px', textAlign: 'left' }}>
+                <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.8px', marginBottom: '12px', fontWeight: '700' }}>
+                  Passengers
+                </h3>
+                {(ride.passengers || []).length === 0 ? (
+                  <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>No passengers in this ride.</p>
+                ) : (
+                  (ride.passengers || []).map((p, i) => (
+                    <div key={i} className="glass-card" style={{ marginBottom: '12px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: '4px solid var(--primary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: '#EDE8FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: 'var(--primary)', fontSize: '0.95rem' }}>
+                          {p.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p style={{ fontWeight: '700', margin: 0, fontSize: '0.9rem' }}>{p.name}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>{p.phone}</p>
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '6px 10px', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                        onClick={() => {
+                          const myPhone = ride.driver_phone || session?.user?.user_metadata?.phone || '';
+                          setCallParams({
+                            calleeName: p.name,
+                            calleePhone: p.phone || '+233000000000',
+                            callerName: currentUser,
+                            callerPhone: myPhone,
+                            isIncoming: false,
+                          });
+                          setShowCall(true);
+                        }}
+                      >
+                        📞 Call
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
           ) : (
             <>
               <button
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }}
                 onClick={() => {
+                  const me = (ride.passengers || []).find(p => (p.name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase());
+                  const myPhone = me?.phone || session?.user?.user_metadata?.phone || '';
                   setCallParams({
                     calleeName: 'Driver',
                     calleePhone: ride.driver_phone || '+233000000000',
                     callerName: currentUser,
+                    callerPhone: myPhone,
                     isIncoming: false,
                   });
                   setShowCall(true);
@@ -185,6 +231,7 @@ export default function OngoingRide({ session }) {
             calleeName={callParams.calleeName}
             calleePhone={callParams.calleePhone}
             callerName={callParams.callerName}
+            callerPhone={callParams.callerPhone}
             isIncoming={callParams.isIncoming}
             onClose={() => setShowCall(false)}
           />
@@ -235,10 +282,12 @@ export default function OngoingRide({ session }) {
                         className="btn btn-secondary"
                         style={{ padding: '6px 10px', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         onClick={() => {
+                          const myPhone = ride.driver_phone || session?.user?.user_metadata?.phone || '';
                           setCallParams({
                             calleeName: p.name,
                             calleePhone: p.phone || '+233000000000',
                             callerName: currentUser,
+                            callerPhone: myPhone,
                             isIncoming: false,
                           });
                           setShowCall(true);
@@ -294,6 +343,7 @@ export default function OngoingRide({ session }) {
           calleeName={callParams.calleeName}
           calleePhone={callParams.calleePhone}
           callerName={callParams.callerName}
+          callerPhone={callParams.callerPhone}
           isIncoming={callParams.isIncoming}
           onClose={() => setShowCall(false)}
         />

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import { Clock, MapPin, Users, Phone, Check, X, Loader2 } from 'lucide-react';
+import { CallManager } from '../utils/callManager';
+import CallOverlay from '../components/CallOverlay';
 
 export default function RideHistory({ session }) {
   const navigate = useNavigate();
@@ -9,6 +11,10 @@ export default function RideHistory({ session }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('offered');
   const [updatingId, setUpdatingId] = useState(null);
+
+  // Call Signaling State
+  const [showCall, setShowCall] = useState(false);
+  const [callParams, setCallParams] = useState({ calleeName: '', calleePhone: '', callerName: '', callerPhone: '', isIncoming: false });
 
   const currentUser = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'Web User';
 
@@ -33,6 +39,35 @@ export default function RideHistory({ session }) {
       clearInterval(pollInterval);
     };
   }, []);
+
+  // Subscribe to call signaling events
+  useEffect(() => {
+    const myActiveRide = rides.find(r => 
+      ((r.driver_name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase() ||
+       (r.passengers || []).some(p => (p.name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase())) && 
+      (r.status === 'waiting' || r.status === 'ongoing')
+    );
+
+    if (myActiveRide) {
+      CallManager.subscribe(myActiveRide.id);
+      const unsub = CallManager.addListener((event, payload) => {
+        if (event === 'call_request') {
+          setCallParams({
+            calleeName: currentUser,
+            calleePhone: payload.callerPhone || '',
+            callerName: payload.callerName || 'Companion',
+            callerPhone: '',
+            isIncoming: true,
+          });
+          setShowCall(true);
+        }
+      });
+      return () => {
+        unsub();
+        CallManager.cleanup();
+      };
+    }
+  }, [rides, currentUser]);
 
   const handleAccept = async (ride, req) => {
     setUpdatingId(`a-${req.name}`);
@@ -172,11 +207,32 @@ export default function RideHistory({ session }) {
                     <h4 style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '10px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Users size={16} /> Passengers ({(ride.passengers || []).length})
                     </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
                       {ride.passengers.map((p, i) => (
-                        <div key={i} style={{ background: '#fff', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                          <p style={{ fontWeight: '600', fontSize: '0.85rem', margin: 0 }}>{p.name}</p>
-                          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>{p.phone}</p>
+                        <div key={i} style={{ background: '#fff', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p style={{ fontWeight: '600', fontSize: '0.85rem', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{p.name}</p>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>{p.phone}</p>
+                          </div>
+                          {ride.status !== 'completed' && ride.status !== 'cancelled' && (
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--primary)', borderColor: 'var(--primary)', flexShrink: 0 }}
+                              onClick={() => {
+                                const myPhone = ride.driver_phone || session?.user?.user_metadata?.phone || '';
+                                setCallParams({
+                                  calleeName: p.name,
+                                  calleePhone: p.phone || '+233000000000',
+                                  callerName: currentUser,
+                                  callerPhone: myPhone,
+                                  isIncoming: false,
+                                });
+                                setShowCall(true);
+                              }}
+                            >
+                              📞 Call
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -188,6 +244,24 @@ export default function RideHistory({ session }) {
         </div>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Calling Overlay Component */}
+      {showCall && (
+        <CallOverlay
+          rideId={rides.find(r => 
+            ((r.driver_name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase() ||
+             (r.passengers || []).some(p => (p.name || '').trim().toLowerCase() === (currentUser || '').trim().toLowerCase())) && 
+            (r.status === 'waiting' || r.status === 'ongoing')
+          )?.id}
+          currentUser={currentUser}
+          calleeName={callParams.calleeName}
+          calleePhone={callParams.calleePhone}
+          callerName={callParams.callerName}
+          callerPhone={callParams.callerPhone}
+          isIncoming={callParams.isIncoming}
+          onClose={() => setShowCall(false)}
+        />
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export default function CallOverlay({
   calleeName = 'User',
   calleePhone = '+233000000000',
   callerName = 'Companion',
+  callerPhone = '',
   isIncoming = false,
   onClose,
 }) {
@@ -58,9 +59,9 @@ export default function CallOverlay({
       }
     });
 
-    // If we are initiating the call, send call request
+    // If we are initiating the call, send call request with phone number
     if (!isIncoming) {
-      CallManager.send('call_request', { callerName });
+      CallManager.send('call_request', { callerName, callerPhone });
     }
 
     return () => {
