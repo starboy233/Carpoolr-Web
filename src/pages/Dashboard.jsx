@@ -10,6 +10,8 @@ export default function Dashboard({ session }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const userName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'User';
+
     async function fetchDashboardData() {
       try {
         const { data: rides, error } = await supabase
@@ -19,14 +21,20 @@ export default function Dashboard({ session }) {
 
         if (error) throw error;
         if (rides) {
-          setRidesList(rides);
-          setStats({
-            total: rides.length,
-            waiting: rides.filter(r => r.status === 'waiting').length,
-            ongoing: rides.filter(r => r.status === 'ongoing').length,
-            completed: rides.filter(r => r.status === 'completed').length
+          const userRides = rides.filter(r => {
+            const isDriver = (r.driver_name || '').trim().toLowerCase() === userName.trim().toLowerCase();
+            const isPassenger = (r.passengers || []).some(p => (p.name || '').trim().toLowerCase() === userName.trim().toLowerCase());
+            return isDriver || isPassenger;
           });
-          setRecentRides(rides.slice(0, 3));
+
+          setRidesList(userRides);
+          setStats({
+            total: userRides.length,
+            waiting: userRides.filter(r => r.status === 'waiting').length,
+            ongoing: userRides.filter(r => r.status === 'ongoing').length,
+            completed: userRides.filter(r => r.status === 'completed').length
+          });
+          setRecentRides(userRides.slice(0, 3));
         }
       } catch (err) {
         console.error('Dashboard error:', err);
@@ -42,7 +50,7 @@ export default function Dashboard({ session }) {
       supabase.removeChannel(ch);
       clearInterval(pollInterval);
     };
-  }, []);
+  }, [session]);
 
   const userName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email?.split('@')[0] || 'User';
 
