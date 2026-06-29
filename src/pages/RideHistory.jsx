@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 import { Clock, MapPin, Users, Phone, Check, X, Loader2 } from 'lucide-react';
-import { CallManager } from '../utils/callManager';
-import CallOverlay from '../components/CallOverlay';
 
 export default function RideHistory({ session }) {
   const navigate = useNavigate();

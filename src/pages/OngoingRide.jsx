@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { Loader2, Phone, Check, X, CreditCard } from 'lucide-react';
-import { CallManager } from '../utils/callManager';
-import CallOverlay from '../components/CallOverlay';
 
 export default function OngoingRide({ session }) {
   const { rideId } = useParams();
@@ -188,20 +186,6 @@ export default function OngoingRide({ session }) {
             </>
           )}
         </div>
-        
-        {/* Calling Overlay Component */}
-        {showCall && (
-          <CallOverlay
-            rideId={rideId}
-            currentUser={currentUser}
-            calleeName={callParams.calleeName}
-            calleePhone={callParams.calleePhone}
-            callerName={callParams.callerName}
-            callerPhone={callParams.callerPhone}
-            isIncoming={callParams.isIncoming}
-            onClose={() => setShowCall(false)}
-          />
-        )}
       </div>
     );
   }
